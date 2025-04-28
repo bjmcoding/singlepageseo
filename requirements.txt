@@ -1,8 +1,10 @@
+# requirements.txt for seo_analyzer_app.py
+
 streamlit
 requests
 beautifulsoup4
-lxml
-lxml[html_clean]
 pandas
 altair
+readability-lxml
 validators
+lxml
