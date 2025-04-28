@@ -1,5 +1,6 @@
 # seo_analyzer_app.py
 # Streamlit application for Single Page SEO Analysis (No PageSpeed Insights)
+# Version: 2025-04-28 (Gauge Fix)
 
 import streamlit as st
 import requests
@@ -685,39 +686,52 @@ def calculate_overall_score(on_page_results, tech_results):
     # --- On-Page Scoring ---
     op_score = 0
     op_max = 0
-    op_max += weights['title'] * 3; op_score += weights['title'] * (get_pass_score(on_page_results, 'title_presence') + get_pass_score(on_page_results, 'title_length') + get_pass_score(on_page_results, 'title_keywords'))
-    op_max += weights['meta_desc'] * 3; op_score += weights['meta_desc'] * (get_pass_score(on_page_results, 'meta_desc_presence') + get_pass_score(on_page_results, 'meta_desc_length') + get_pass_score(on_page_results, 'meta_desc_keywords'))
-    op_max += weights['h1'] * 2; op_score += weights['h1'] * (get_pass_score(on_page_results, 'h1_presence') + get_pass_score(on_page_results, 'h1_keywords'))
-    op_max += weights['keywords'] * 2; op_score += weights['keywords'] * (get_pass_score(on_page_results, 'keyword_density') + get_pass_score(on_page_results, 'keyword_prominence'))
-    op_max += weights['content'] * 1; op_score += weights['content'] * get_pass_score(on_page_results, 'content_word_count')
-    op_max += weights['readability'] * 1; op_score += weights['readability'] * get_pass_score(on_page_results, 'readability')
-    op_max += weights['images'] * 2; op_score += weights['images'] * (get_pass_score(on_page_results, 'image_alt_text') + get_pass_score(on_page_results, 'image_filenames'))
-    op_max += weights['links'] * 1; op_score += weights['links'] * get_pass_score(on_page_results, 'internal_links_count')
-    op_max += weights['broken_links'] * 1; op_score += weights['broken_links'] * get_pass_score(on_page_results, 'broken_links')
+    try:
+        op_max += weights['title'] * 3; op_score += weights['title'] * (get_pass_score(on_page_results, 'title_presence') + get_pass_score(on_page_results, 'title_length') + get_pass_score(on_page_results, 'title_keywords'))
+        op_max += weights['meta_desc'] * 3; op_score += weights['meta_desc'] * (get_pass_score(on_page_results, 'meta_desc_presence') + get_pass_score(on_page_results, 'meta_desc_length') + get_pass_score(on_page_results, 'meta_desc_keywords'))
+        op_max += weights['h1'] * 2; op_score += weights['h1'] * (get_pass_score(on_page_results, 'h1_presence') + get_pass_score(on_page_results, 'h1_keywords'))
+        op_max += weights['keywords'] * 2; op_score += weights['keywords'] * (get_pass_score(on_page_results, 'keyword_density') + get_pass_score(on_page_results, 'keyword_prominence'))
+        op_max += weights['content'] * 1; op_score += weights['content'] * get_pass_score(on_page_results, 'content_word_count')
+        op_max += weights['readability'] * 1; op_score += weights['readability'] * get_pass_score(on_page_results, 'readability')
+        op_max += weights['images'] * 2; op_score += weights['images'] * (get_pass_score(on_page_results, 'image_alt_text') + get_pass_score(on_page_results, 'image_filenames'))
+        op_max += weights['links'] * 1; op_score += weights['links'] * get_pass_score(on_page_results, 'internal_links_count')
+        op_max += weights['broken_links'] * 1; op_score += weights['broken_links'] * get_pass_score(on_page_results, 'broken_links')
+        scores['on_page'] = (op_score / op_max * 100) if op_max > 0 else 0
+    except Exception as e:
+        st.error(f"Error calculating On-Page score: {e}")
+        scores['on_page'] = 0
 
-    scores['on_page'] = (op_score / op_max * 100) if op_max > 0 else 0
 
     # --- Technical Scoring ---
     tech_score = 0
     tech_max = 0
-    tech_max += weights['https'] * 1; tech_score += weights['https'] * get_pass_score(tech_results, 'https')
-    robots_allowed = get_pass_score(tech_results, 'robots_txt_check') # Pass = Allowed
-    tech_max += weights['crawl'] * 2; tech_score += weights['crawl'] * (get_pass_score(tech_results, 'meta_robots') + robots_allowed)
-    tech_max += weights['url'] * 2; tech_score += weights['url'] * (get_pass_score(tech_results, 'url_length') + get_pass_score(tech_results, 'url_readability'))
-    tech_max += weights['schema'] * 1; tech_score += weights['schema'] * get_pass_score(tech_results, 'schema_markup')
-    # Basic mobile checks combined
-    tech_max += weights['mobile'] * 2; tech_score += weights['mobile'] * (get_pass_score(tech_results, 'mobile_viewport') + get_pass_score(tech_results, 'mobile_interstitials'))
-    tech_max += weights['ttfb'] * 1; tech_score += weights['ttfb'] * get_pass_score(tech_results, 'ttfb')
+    try:
+        tech_max += weights['https'] * 1; tech_score += weights['https'] * get_pass_score(tech_results, 'https')
+        robots_allowed = get_pass_score(tech_results, 'robots_txt_check') # Pass = Allowed
+        tech_max += weights['crawl'] * 2; tech_score += weights['crawl'] * (get_pass_score(tech_results, 'meta_robots') + robots_allowed)
+        tech_max += weights['url'] * 2; tech_score += weights['url'] * (get_pass_score(tech_results, 'url_length') + get_pass_score(tech_results, 'url_readability'))
+        tech_max += weights['schema'] * 1; tech_score += weights['schema'] * get_pass_score(tech_results, 'schema_markup')
+        # Basic mobile checks combined
+        tech_max += weights['mobile'] * 2; tech_score += weights['mobile'] * (get_pass_score(tech_results, 'mobile_viewport') + get_pass_score(tech_results, 'mobile_interstitials'))
+        tech_max += weights['ttfb'] * 1; tech_score += weights['ttfb'] * get_pass_score(tech_results, 'ttfb')
+        scores['technical'] = (tech_score / tech_max * 100) if tech_max > 0 else 0
+    except Exception as e:
+        st.error(f"Error calculating Technical score: {e}")
+        scores['technical'] = 0
 
-    scores['technical'] = (tech_score / tech_max * 100) if tech_max > 0 else 0
 
     # --- Overall Score ---
-    # Ensure scores are within 0-100 range before weighting
-    scores['on_page'] = max(0, min(100, scores['on_page']))
-    scores['technical'] = max(0, min(100, scores['technical']))
+    try:
+        # Ensure scores are within 0-100 range before weighting
+        scores['on_page'] = max(0, min(100, scores['on_page']))
+        scores['technical'] = max(0, min(100, scores['technical']))
 
-    overall_score = (scores['on_page'] * weights['on_page']) + (scores['technical'] * weights['technical'])
-    scores['overall'] = int(round(overall_score)) # Round to nearest integer
+        overall_score = (scores['on_page'] * weights['on_page']) + (scores['technical'] * weights['technical'])
+        scores['overall'] = int(round(overall_score)) # Round to nearest integer
+    except Exception as e:
+         st.error(f"Error calculating Overall score: {e}")
+         scores['overall'] = 0
+
 
     return scores
 
@@ -728,45 +742,34 @@ def generate_recommendations(on_page_recs, tech_recs, on_page_results, tech_resu
     processed_recs = set() # Keep track of recommendations already added
 
     def add_rec(rec, priority_level):
-        rec_text = rec.split(': ')[-1] # Get the core message
-        if rec_text not in processed_recs:
-            prioritized.append(f"{priority_level}: {rec}")
-            processed_recs.add(rec_text)
+        # Extract the core message to avoid adding duplicates based on prefix
+        core_message = rec.split(': ', 1)[-1] if ': ' in rec else rec
+        if core_message not in processed_recs:
+            # Use the original recommendation text with the new priority prefix
+            prioritized.append(f"{priority_level}: {core_message}")
+            processed_recs.add(core_message)
 
-    # Critical Technical First
-    if not tech_results.get('https', {}).get('pass'): add_rec(tech_recs.pop(tech_recs.index(next(r for r in tech_recs if 'HTTPS' in r))), "🔴 CRITICAL")
-    if not tech_results.get('meta_robots', {}).get('pass'): add_rec(tech_recs.pop(tech_recs.index(next(r for r in tech_recs if 'noindex' in r))), "🔴 CRITICAL")
-    if not tech_results.get('robots_txt_check', {}).get('pass'): add_rec(tech_recs.pop(tech_recs.index(next(r for r in tech_recs if 'robots.txt' in r))), "🔴 CRITICAL")
+    # Process recommendations from analysis functions first
+    all_recs = tech_recs + on_page_recs
 
-    # Critical On-Page
-    if not on_page_results.get('title_presence', {}).get('pass'): add_rec(on_page_recs.pop(on_page_recs.index(next(r for r in on_page_recs if 'Title Tag' in r and 'Add' in r))), "🟠 HIGH")
-    if not on_page_results.get('meta_desc_presence', {}).get('pass'): add_rec(on_page_recs.pop(on_page_recs.index(next(r for r in on_page_recs if 'Meta Description' in r and 'Add' in r))), "🟠 HIGH")
-    if not on_page_results.get('h1_presence', {}).get('pass'): add_rec(on_page_recs.pop(on_page_recs.index(next(r for r in on_page_recs if 'H1 tag' in r))), "🟠 HIGH")
-
-    # Broken Links
-    if not on_page_results.get('broken_links', {}).get('pass'): add_rec(on_page_recs.pop(on_page_recs.index(next(r for r in on_page_recs if 'Broken Links' in r))), "🟠 HIGH")
-
-
-    # Combine remaining, assign priorities based on keywords
-    remaining_recs = tech_recs + on_page_recs
-    for rec in remaining_recs:
-        prefix = "⚪️ LOW" # Default low
+    # Apply priorities based on severity/keywords
+    for rec in all_recs:
         rec_lower = rec.lower()
-        # Medium priority examples
-        if any(kw in rec_lower for kw in ["improve readability", "improve url", "server response time", "review canonical", "internal linking", "alt text", "image filenames"]):
-             prefix = "🔵 MEDIUM"
-        # High priority examples (already covered critical/presence, focus on missing keywords etc)
-        if any(kw in rec_lower for kw in ["improve title tag", "improve meta description", "improve h1 tag"]):
-            prefix = "🟠 HIGH"
-        if any(kw in rec_lower for kw in ["add canonical tag", "add schema markup", "mobile experience"]):
-             prefix = "🔵 MEDIUM" # Usually improvements, not critical failures
+        prefix = "⚪️ LOW" # Default low
 
-        add_rec(rec, prefix)
+        # Assign Priority
+        if "critical" in rec_lower: prefix = "🔴 CRITICAL"
+        elif any(kw in rec_lower for kw in ["high:", "add a compelling title tag", "add a unique and informative meta description", "ensure there is exactly one h1 tag", "fix broken links"]): prefix = "🟠 HIGH"
+        elif any(kw in rec_lower for kw in ["medium:", "improve readability", "improve url", "server response time", "review canonical", "internal linking", "alt text", "image filenames", "mobile experience", "add canonical tag", "add schema markup"]): prefix = "🔵 MEDIUM"
+        elif "low:" in rec_lower: prefix = "⚪️ LOW" # Explicit low priority
+
+        add_rec(rec, prefix) # Add with determined priority, avoiding duplicates
 
 
     # Ensure manual speed check is always mentioned if not already covered
-    if "Review Page Speed Manually" not in processed_recs:
-         add_rec("Review Page Speed Manually: Use external tools (Google PageSpeed web UI, WebPageTest.org) for detailed speed/CWV analysis.", "🔵 MEDIUM")
+    manual_speed_rec = "Review Page Speed Manually: Use external tools (Google PageSpeed web UI, WebPageTest.org) for detailed speed/CWV analysis."
+    if manual_speed_rec not in processed_recs:
+         add_rec(manual_speed_rec, "🔵 MEDIUM")
 
 
     # Sort by priority symbol then alphabetically
@@ -779,21 +782,47 @@ def generate_recommendations(on_page_recs, tech_recs, on_page_results, tech_resu
 # --- Visualization Functions ---
 
 def create_score_gauge(score, title):
-    """Creates a simple gauge-like visualization using Altair."""
+    """Creates a simple gauge-like visualization using Altair (v5 compatible)."""
     if score is None: score = 0
     score = max(0, min(100, int(score)))
     color_scale = alt.Scale(domain=[0, 50, 90, 100], range=['#F44336', '#FFC107', '#4CAF50', '#4CAF50']) # Red, Yellow, Green
-    base = alt.Chart(pd.DataFrame({'value': [100]})).mark_arc(outerRadius=100, innerRadius=80, endAngle=3.14).encode(
-        theta=alt.Theta("value", stack=True, scale=alt.Scale(range=[0, 3.14])), color=alt.value('#ddd'), order=alt.Order("value", sort="descending")
+
+    # Base background arc
+    base = alt.Chart(pd.DataFrame({'value': [100]})).mark_arc(outerRadius=100, innerRadius=80).encode(
+        # Use theta encoding with scale to define the semi-circle extent
+        theta=alt.Theta("value", stack=True, scale=alt.Scale(domain=[0, 100], range=[0, 3.14159])), # Use Pi for semi-circle
+        color=alt.value('#ddd'), # Background color
+        order=alt.Order("value", sort="descending") # Ensures background is drawn first
     )
+
+    # Foreground score arc
     score_arc = alt.Chart(pd.DataFrame({'value': [score]})).mark_arc(outerRadius=100, innerRadius=80).encode(
-        theta=alt.Theta("value", scale=alt.Scale(range=[0, 3.14])), color=alt.Color("value", scale=color_scale, legend=None), order=alt.Order("value", sort="descending")
+        # Map the score value (0-100) to the angle range (0 to Pi)
+        theta=alt.Theta("value", scale=alt.Scale(domain=[0, 100], range=[0, 3.14159]), legend=None), # No legend needed
+        color=alt.Color("value", scale=color_scale, legend=None), # Color based on score
+        order=alt.Order("value", sort="descending") # Not strictly needed here but good practice
     )
-    text = alt.Chart(pd.DataFrame({'value': [score]})).mark_text(dy=0, fontSize=30, fontWeight='bold').encode(
-        text=alt.Text("value", format=".0f"), color=alt.Color("value", scale=color_scale, legend=None)
+
+    # Score text in the middle
+    text = alt.Chart(pd.DataFrame({'value': [score]})).mark_text(
+            align='center',
+            baseline='middle', # Vertically center
+            dy=-10, # Adjust vertical position slightly if needed
+            fontSize=30,
+            fontWeight='bold'
+        ).encode(
+        text=alt.Text("value", format=".0f"), # Display score as integer
+        color=alt.Color("value", scale=color_scale, legend=None) # Color text based on score
     )
-    chart = alt.layer(base, score_arc, text).properties(title=title).configure_view(strokeWidth=0)
+
+    # Layer the charts
+    chart = alt.layer(base, score_arc, text).properties(
+        title=alt.TitleParams(text=title, anchor='middle', dy=-60) # Center title, move slightly up
+    ).configure_view(
+        strokeWidth=0 # Remove border around the chart view
+    )
     return chart
+
 
 def create_comparison_bar_chart(df_compare, metric, title):
     """ Creates a grouped bar chart for comparing target vs competitors."""
@@ -818,8 +847,9 @@ def create_comparison_bar_chart(df_compare, metric, title):
         st.caption(f"Not enough data to display {title} chart.")
         return None
 
+    # Improve label handling for long competitor names if needed
     chart = alt.Chart(df_compare).mark_bar().encode(
-        x=alt.X('Competitor', sort='-y', title=None, axis=alt.Axis(labels=False)), # Hide competitor names on X if too many
+        x=alt.X('Competitor', sort='-y', title=None, axis=alt.Axis(labelAngle=-45)), # Angle labels if needed
         y=alt.Y(metric, title=metric),
         color=alt.Color('Competitor', legend=alt.Legend(title="Site")),
         tooltip=['Competitor', metric]
@@ -832,7 +862,7 @@ def main():
     st.set_page_config(page_title="Single Page SEO Analyzer", layout="wide")
 
     st.title("📄 Single Page SEO Analyzer & Competitor Benchmark")
-    st.markdown("Analyze on-page and technical SEO factors (**excluding** Google PageSpeed Insights / Core Web Vitals). Compares against competitors (using simulated data).")
+    st.markdown("Analyze on-page and technical SEO factors (**excluding** Google PageSpeed Insights / Core Web Vitals). Compares against competitors (using simulated data or SERP API).")
 
     # --- Inputs ---
     st.sidebar.header("Inputs")
@@ -943,6 +973,7 @@ def main():
                                 # 'Schema Markup?': 'Yes' if comp.get('position',1) % 2 == 1 else 'No' # Dummy
                             }
                             # --- TODO: Add actual fetching/analysis of competitors if implementing real SERP API ---
+                            # analysis_placeholder.info(f"➡️ Analyzing competitor: {comp.get('domain')}...")
                             # comp_html, comp_status, _, comp_fetch_error = fetch_html(comp.get('link'))
                             # if comp_html and not comp_fetch_error:
                             #    comp_soup = BeautifulSoup(comp_html, 'lxml')
@@ -952,6 +983,8 @@ def main():
                             #    comp_analysis['Images'] = comp_on_page.get('image_count',{}).get('value')
                             #    comp_analysis['Internal Links'] = comp_on_page.get('internal_links_count',{}).get('value')
                             #    comp_analysis['Schema Markup?'] = 'Yes' if comp_tech.get('schema_markup',{}).get('pass') else 'No'
+                            # else:
+                            #    st.warning(f"Could not fetch/analyze competitor {comp.get('domain')}: {comp_fetch_error}")
                             # --- End TODO ---
                             competitor_analysis_results.append(comp_analysis)
 
@@ -987,8 +1020,8 @@ def main():
 
                     # Weaknesses & Opportunities
                     st.subheader("📉 Weaknesses & Opportunities")
-                    weaknesses = [rec for rec in final_recommendations if "CRITICAL" in rec or "HIGH" in rec]
-                    opportunities = [rec for rec in final_recommendations if "MEDIUM" in rec or "LOW" in rec]
+                    weaknesses = [rec for rec in final_recommendations if "🔴 CRITICAL" in rec or "🟠 HIGH" in rec]
+                    opportunities = [rec for rec in final_recommendations if "🔵 MEDIUM" in rec or "⚪️ LOW" in rec]
                     opp_col1, opp_col2 = st.columns(2)
                     with opp_col1:
                         st.markdown("**Key Weaknesses:**")
@@ -1002,7 +1035,7 @@ def main():
                          # Add content gap / SERP feature opportunities if SERP API was real
                          if serp_features and serp_features.get('related_questions'):
                               st.markdown("**Content Ideas (from 'People Also Ask'):**")
-                              for q in serp_features['related_questions'][:3]: # Show top 3 PAA
+                              for q in serp_features.get('related_questions', [])[:3]: # Show top 3 PAA
                                   st.markdown(f"- {q.get('question', 'N/A')}")
 
                          else: st.write("No specific content opportunities identified.")
@@ -1011,18 +1044,22 @@ def main():
                     st.subheader("🔍 Detailed Analysis")
                     tab1, tab2, tab3 = st.tabs(["On-Page SEO", "Technical SEO", "Competitor Analysis"])
 
+                    # Helper function to create status string
+                    def get_status_string(data, key):
+                         pass_status = data.get(key, {}).get('pass')
+                         details = data.get(key, {}).get('details', '')
+                         if pass_status is True: return '✅ Pass'
+                         if pass_status is False:
+                             if 'CRITICAL' in details.upper(): return '❌ CRITICAL'
+                             return '⚠️ Needs Improvement'
+                         return 'ℹ️ Info' # If pass is None or key doesn't exist
+
                     with tab1:
                         st.subheader("On-Page SEO Checklist")
-                        # Convert results dict to dataframe format
                         on_page_list = []
                         for key, data in on_page_results.items():
-                             status = 'ℹ️ Info'
-                             if data.get('pass') is True: status = '✅ Pass'
-                             elif data.get('pass') is False: status = '❌ Fail' if 'CRITICAL' in data.get('details', '').upper() else '⚠️ Needs Improvement'
-                             # Format parameter name nicely
                              param_name = key.replace('_', ' ').title()
-                             on_page_list.append({'Parameter': param_name, 'Result': data.get('details', 'N/A'), 'Status': status})
-
+                             on_page_list.append({'Parameter': param_name, 'Result': data.get('details', 'N/A'), 'Status': get_status_string(on_page_results, key)})
                         on_page_df = pd.DataFrame(on_page_list)
                         st.dataframe(on_page_df, use_container_width=True, hide_index=True)
 
@@ -1033,16 +1070,10 @@ def main():
 
                     with tab2:
                         st.subheader("Technical SEO Checklist")
-                         # Convert results dict to dataframe format
                         tech_list = []
                         for key, data in tech_results.items():
-                             status = 'ℹ️ Info'
-                             if data.get('pass') is True: status = '✅ Pass'
-                             elif data.get('pass') is False: status = '❌ CRITICAL' if 'CRITICAL' in data.get('details', '').upper() else '⚠️ Needs Improvement'
-                             # Format parameter name nicely
                              param_name = key.replace('_', ' ').title()
-                             tech_list.append({'Parameter': param_name, 'Result': data.get('details', 'N/A'), 'Status': status})
-
+                             tech_list.append({'Parameter': param_name, 'Result': data.get('details', 'N/A'), 'Status': get_status_string(tech_results, key)})
                         tech_df = pd.DataFrame(tech_list)
                         st.dataframe(tech_df, use_container_width=True, hide_index=True)
 
@@ -1051,12 +1082,15 @@ def main():
                         st.subheader("Competitor Benchmark Report")
                         if not competitor_data.empty:
                             st.markdown("**Top Simulated/Identified Competitors:**")
-                            for idx, row in competitor_data.iterrows():
-                                st.write(f"{idx+1}. {row['Competitor']} ({row['URL']})")
+                            # Display only top competitors identified
+                            comp_display_df = competitor_data[['Competitor', 'URL']].copy()
+                            comp_display_df.index = range(1, len(comp_display_df) + 1) # Start index at 1
+                            st.dataframe(comp_display_df, use_container_width=True)
+
 
                             st.markdown("**Comparative Analysis (Basic - Requires fetching competitor pages for more detail):**")
 
-                            # Prepare data for comparison chart (using ONLY data available from target page analysis + placeholder competitor data)
+                            # Prepare data for comparison chart
                             target_metrics = {
                                 'Competitor': f"Target Page", # Shorter name
                                 'URL': url_input,
@@ -1067,20 +1101,34 @@ def main():
                                 'Schema Markup?': 'Yes' if tech_results.get('schema_markup', {}).get('pass') else 'No'
                             }
 
-                            # Ensure competitor_data has the same columns for concatenation, fill missing with None/NaN
-                            required_cols = list(target_metrics.keys())
-                            competitor_data_aligned = competitor_data.reindex(columns=required_cols)
+                            # Add target metrics as the first row
+                            compare_list = [target_metrics]
+                            # Add competitor metrics (currently mostly from SERP data)
+                            for _, row in competitor_data.iterrows():
+                                comp_metrics = row.to_dict()
+                                # Rename domain to Competitor for consistency if needed
+                                if 'domain' in comp_metrics and 'Competitor' not in comp_metrics:
+                                    comp_metrics['Competitor'] = comp_metrics.pop('domain')
+                                compare_list.append(comp_metrics)
 
-                            compare_df = pd.concat([pd.DataFrame([target_metrics]), competitor_data_aligned], ignore_index=True)
-                            display_cols = ['Competitor', 'Title Length', 'Word Count', 'Images', 'Internal Links', 'Schema Markup?'] # Adjust if more metrics are fetched
+                            compare_df = pd.DataFrame(compare_list)
+
+                            # Define columns to show - adjust if fetching more competitor data
+                            display_cols = ['Competitor', 'Title Length'] # Start with basic info
+                            # Add other columns if they exist after potential fetching/analysis
+                            for col in ['Word Count', 'Images', 'Internal Links', 'Schema Markup?']:
+                                if col in compare_df.columns:
+                                    display_cols.append(col)
+
                             st.dataframe(compare_df.set_index('Competitor')[display_cols], use_container_width=True)
+
 
                             # Add comparison charts only if data exists and can be made numeric
                             st.markdown("**Visual Comparison:**")
-                            if 'Word Count' in compare_df.columns:
+                            if 'Word Count' in display_cols:
                                  chart_wc = create_comparison_bar_chart(compare_df.copy(), 'Word Count', 'Word Count Comparison')
                                  if chart_wc: st.altair_chart(chart_wc, use_container_width=True)
-                            if 'Internal Links' in compare_df.columns:
+                            if 'Internal Links' in display_cols:
                                  chart_il = create_comparison_bar_chart(compare_df.copy(), 'Internal Links', 'Internal Link Count Comparison')
                                  if chart_il: st.altair_chart(chart_il, use_container_width=True)
 
