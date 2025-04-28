@@ -2,7 +2,7 @@ streamlit
 requests
 beautifulsoup4
 lxml
-readability-lxml
+lxml[html_clean]
 pandas
 altair
 validators
